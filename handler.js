@@ -15,6 +15,8 @@
  * limitations under the License.
  * 
  */
+// https://www.npmjs.com/package/dotenv
+require('dotenv').config()
 // https://www.npmjs.com/package/ibm-cos-sdk
 const { S3 } = require('ibm-cos-sdk')
 // https://www.npmjs.com/package/request
@@ -30,10 +32,10 @@ const util = require('util')
  * 
  */
 var cos = new S3({
-    endpoint: '{endpoint}',
-    apiKeyId: '{apiKeyId}',
+    endpoint: process.env.COS_ENDPOINT || '{endpoint}',
+    apiKeyId: process.env.COS_APIKEY || '{apiKeyId}',
     ibmAuthEndpoint: 'https://iam.cloud.ibm.com/identity/token',
-    serviceInstanceId: '{serviceInstanceId}',
+    serviceInstanceId: process.env.COS_INSTANCEID || '{serviceInstanceId}',
 })
 /**
  * 
@@ -41,8 +43,8 @@ var cos = new S3({
  * Using "From-To" logic with all logs
  * 
  */
-const BUCKET_RECEIVER = '{bucketReceiver}'
-const BUCKET_ARCHIVE = '{bucketArchive}'
+const BUCKET_RECEIVER = process.env.COS_BUCKET_RECEIVER || '{bucketReceiver}'
+const BUCKET_ARCHIVE = process.env.COS_BUCKET_ARCHIVE || '{bucketArchive}'
 /**
  * 
  * IBM CLOUD OBJECT STORAGE
@@ -57,8 +59,8 @@ const MAX_KEYS = 1
  * API Key and Hostname to send the logs
  * 
  */
-const INGESTION_KEY = '{ingestionKey}'
-const HOSTNAME = '{host}'
+const INGESTION_KEY = process.env.LOGDNA_INGESTION_KEY || '{ingestionKey}'
+const HOSTNAME = process.env.LOGDNA_HOSTNAME || '{host}'
 /**
  * 
  * PACKAGE PER REQUEST

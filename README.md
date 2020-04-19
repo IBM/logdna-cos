@@ -20,6 +20,9 @@ cd logdna-cos
 
 ### 2. Open the project in a text editor
 
+If you are going to run on a Serverless function replace all lines, described below.
+Or if you're going to run on a VM, you can simply add all credencials on a .env file (follow the skeleton on [.env.example](.env.example)).
+
 Replace on `handler.js`:
 
 - [ Line 33 ] `{endpoint}` by your IBM Cloud Object Storage's endpoint.
@@ -70,6 +73,8 @@ async function main() {
 // DEBUG::
 // main()
 ```
+
+Don't forget to add all credencials on a .env file (follow the skeleton on [.env.example](.env.example)).
 
 Tip: Use [pm2](https://www.npmjs.com/package/pm2) to run the script on background in your Virtual Machine.
 
