@@ -5,7 +5,7 @@
 [![LICENSE](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/victorshinya/logdna-cos/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/victorshinya/logdna-cos/pulls)
 
-Use Serverless function to send all log registries from IBM Cloud Object Storage (stored by `Log push` on IBM Cloud Internet Service) to IBM Log Analysis with LogDNA. It will require to setup a Trigger rule to call the function every 5 minutes (to be synced with CIS Log Push time interval).
+Use Serverless function or VM to send all log registries from IBM Cloud Object Storage (stored by `Log push` on IBM Cloud Internet Service) to IBM Log Analysis with LogDNA. It will require to setup a Trigger rule to call the function every 5 minutes (to be synced with CIS Log Push time interval).
 
 ## Deployment
 
@@ -39,6 +39,39 @@ Run the following command to deploy `handler.js` function. It requires an accoun
 ```sh
 ibmcloud fn deploy --manifest serverless.yml
 ```
+
+## Execute function on VM
+
+In order to start the script on a VM, with a recursive mode, you have to uncomment all code below `DEBUG::` on [handler.js](handler.js) (do not uncomment the `DEBUG::` line):
+
+```js
+async function main() {
+    console.time("LogDNA-COS")
+    const response = await downloadAndSend()
+    console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`)
+    console.timeEnd("LogDNA-COS")
+    // DEBUG::
+    // switch (response.status) {
+    //     case 200:
+    //         console.log(`DEBUG: Fetch new log file`)
+    //         await main()
+    //         break
+    //     case 204:
+    //         console.log(`DEBUG: Wait 3 minutes to fetch new log file on COS Bucket`)
+    //         await new Promise(r => setTimeout(r, 180000))
+    //         await main()
+    //         break
+    //     default:
+    //         console.log(`DEBUG: Uncommon behavior`)
+    //         break
+    // }
+}
+
+// DEBUG::
+// main()
+```
+
+Tip: Use [pm2](https://www.npmjs.com/package/pm2) to run the script on background in your Virtual Machine.
 
 ## API Reference
 
