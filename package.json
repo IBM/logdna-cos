@@ -4,6 +4,7 @@
   "description": "Pull the lastest log file on Cloud Object Storage to store on LogDNA",
   "main": "handler.js",
   "scripts": {
+    "start": "node handler.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Victor Shinya <vshinya@br.ibm.com>",
