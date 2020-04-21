@@ -7,6 +7,8 @@
 
 Use Serverless function or VM to send all log registries from IBM Cloud Object Storage (stored by `Log push` on IBM Cloud Internet Service) to IBM Log Analysis with LogDNA. It will require to setup a Trigger rule to call the function every 5 minutes (to be synced with CIS Log Push time interval).
 
+![Architecture Design](doc/source/images/architecture.jpg)
+
 ## Deployment
 
 To deploy, you need to install [IBM Cloud CLI](https://cloud.ibm.com/docs/cli/reference/ibmcloud/download_cli.html#install_use) and [IBM Cloud Functions CLI](https://cloud.ibm.com/openwhisk/learn/cli) in your local machine. After this step, you need to login in your IBM Cloud account on IBM Cloud CLI (if you haven't already done, run `ibmcloud login`), follow all steps below.
