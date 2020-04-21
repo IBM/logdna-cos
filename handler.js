@@ -25,6 +25,8 @@ const request = require('request-promise').defaults({ forever: true })
 const { unzip } = require('zlib')
 // https://nodejs.org/api/util.html
 const util = require('util')
+// https://www.npmjs.com/package/buffer-split
+const split = require('buffer-split')
 /**
  * 
  * IBM CLOUD OBJECT STORAGE
@@ -122,42 +124,34 @@ async function downloadAndSend() {
             }
             const unzipPromise = util.promisify(unzip)
             const newBuffer = await unzipPromise(buffer)
-            const bs = newBuffer.toString()
-            if (!bs) {
-                // No content
-                return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer)
-            } else {
-                const sa = bs.split('}')
-                if (sa[sa.length - 1] === '\n') {
-                    // Remove last object if it is `\n` from log file
-                    sa.pop()
-                }
-                var i, fj = { lines: [] }
-                for (i = 0; i < sa.length; i++) {
-                    sa[i] += '}'
-                    var json = JSON.parse(sa[i])
-                    fj.lines.push({
-                        timestamp: new Date().getTime(),
-                        line: '[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE',
-                        app: 'logdna-cos',
-                        level: 'INFO',
-                        meta: {
-                            customfield: json
-                        }
-                    })
-                    if (i % LOGS === 0 || i === (sa.length - 1)) {
-                        console.log(`DEBUG: Sending package = ${(i / LOGS + 1)}`)
-                        const response = await sendLogDNA(fj)
-                        console.log(`DEBUG: sendLogDNA response = ${JSON.stringify(response)}`)
-                        // Example response body = {"status":"ok","batchID":""}
-                        if (response && response.status === 'ok') {
-                            fj.lines = []
-                        }
+            const tag = new Buffer.from('}')
+            const sa = split(newBuffer, tag)
+            sa.pop()
+            var i, fj = { lines: [] }
+            for (i = 0; i < sa.length; i++) {
+                sa[i] += '}'
+                var json = JSON.parse(sa[i])
+                fj.lines.push({
+                    timestamp: new Date().getTime(),
+                    line: '[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE',
+                    app: 'logdna-cos',
+                    level: 'INFO',
+                    meta: {
+                        customfield: json
+                    }
+                })
+                if (i % LOGS === 0 || i === (sa.length - 1)) {
+                    console.log(`DEBUG: Sending package = ${(i / LOGS + 1)}`)
+                    const response = await sendLogDNA(fj)
+                    console.log(`DEBUG: sendLogDNA response = ${JSON.stringify(response)}`)
+                    // Example response body = {"status":"ok","batchID":""}
+                    if (response && response.status === 'ok') {
+                        fj.lines = []
                     }
                 }
-                console.log(`DEBUG: uploadAndDeleteBucket`)
-                return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer)
             }
+            console.log(`DEBUG: uploadAndDeleteBucket`)
+            return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer)
         }
     } catch (e) {
         console.error(e)

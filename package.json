@@ -10,6 +10,7 @@
   "author": "Victor Shinya <vshinya@br.ibm.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "buffer-split": "^1.0.0",
     "dotenv": "^8.2.0",
     "ibm-cos-sdk": "^1.6.1",
     "request": "^2.88.2",
