@@ -16,11 +16,11 @@
 
 # Basic action code in Node.js
 packages:
-    default:
+    logdna-cos:
         version: 1.0
         license: Apache-2.0
         actions:
-            logdna-cos:
+            index:
                 function: handler.js
                 web-export: false
 
