@@ -25,8 +25,6 @@ const request = require('request-promise').defaults({ forever: true })
 const { unzip } = require('zlib')
 // https://nodejs.org/api/util.html
 const util = require('util')
-// https://www.npmjs.com/package/buffer-split
-const split = require('buffer-split')
 /**
  * 
  * IBM CLOUD OBJECT STORAGE
@@ -105,6 +103,18 @@ async function sendLogDNA(json) {
         console.log('Retrying to send package')
         return await sendLogDNA(json)
     })
+}
+
+function split(buffer, tag) {
+    var search = -1
+    var lines = []
+
+    while((search = buffer.indexOf(tag)) > -1) {
+        lines.push(buffer.slice(0, search))
+        buffer = buffer.slice(search + tag.length, buffer.length)
+    }
+    lines.push(buffer)
+    return lines
 }
 
 async function downloadAndSend() {
