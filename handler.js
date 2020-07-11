@@ -72,10 +72,10 @@ const HOSTNAME = process.env.LOGDNA_HOSTNAME || '{host}'
  */
 const LOGS = 20000
 
-async function uploadAndDeleteBucket(fileName, buffer) {
+async function uploadAndDeleteBucket(fileName) {
     try {
         console.log(`DEBUG: Uploading the log file`)
-        await cos.upload({ Bucket: BUCKET_ARCHIVE, Key: fileName, Body: buffer }).promise()
+        await cos.copyObject({ Bucket: BUCKET_ARCHIVE, CopySource: `${BUCKET_RECEIVER}/${fileName}`, Key: fileName }).promise()
         console.log(`DEBUG: Deleting the log file`)
         await cos.deleteObject({ Bucket: BUCKET_RECEIVER, Key: fileName }).promise()
         return { status: 200, message: 'Update and delete log file DONE' }
@@ -151,7 +151,7 @@ async function downloadAndSend() {
                 }
             }
             console.log(`DEBUG: uploadAndDeleteBucket`)
-            return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer)
+            return await uploadAndDeleteBucket(lo.Contents[0].Key)
         }
     } catch (e) {
         console.error(e)
