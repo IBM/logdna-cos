@@ -4,6 +4,8 @@
   "description": "Pull the lastest log file on Cloud Object Storage to store on LogDNA",
   "main": "handler.js",
   "scripts": {
+    "lint": "eslint *.js --ignore-path .gitignore .",
+    "pretest": "npm run lint",
     "start": "node --max-old-space-size=4096 handler.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,5 +18,10 @@
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
     "zlib": "^1.0.5"
+  },
+  "devDependencies": {
+    "eslint": "^7.4.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0"
   }
 }
