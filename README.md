@@ -51,25 +51,25 @@ In order to start the script on a VM, with a recursive mode, you have to uncomme
 
 ```js
 async function main() {
-    console.time("LogDNA-COS")
-    const response = await downloadAndSend()
-    console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`)
-    console.timeEnd("LogDNA-COS")
-    // DEBUG::
-    // switch (response.status) {
-    //     case 200:
-    //         console.log(`DEBUG: Fetch new log file`)
-    //         await main()
-    //         break
-    //     case 204:
-    //         console.log(`DEBUG: Wait 3 minutes to fetch new log file on COS Bucket`)
-    //         await new Promise(r => setTimeout(r, 180000))
-    //         await main()
-    //         break
-    //     default:
-    //         console.log(`DEBUG: Uncommon behavior`)
-    //         break
-    // }
+  console.time("LogDNA-COS");
+  const response = await downloadAndSend();
+  console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`);
+  console.timeEnd("LogDNA-COS");
+  // DEBUG::
+  // switch (response.status) {
+  //     case 200:
+  //         console.log(`DEBUG: Fetch new log file`)
+  //         await main()
+  //         break
+  //     case 204:
+  //         console.log(`DEBUG: Wait 3 minutes to fetch new log file on COS Bucket`)
+  //         await new Promise(r => setTimeout(r, 180000))
+  //         await main()
+  //         break
+  //     default:
+  //         console.log(`DEBUG: Uncommon behavior`)
+  //         break
+  // }
 }
 
 // DEBUG::
@@ -85,8 +85,6 @@ Tip: Use [pm2](https://www.npmjs.com/package/pm2) to run the script on backgroun
 - [IBM Cloud Object Storage AWS.S3](https://ibm.github.io/ibm-cos-sdk-js/AWS/S3.html)
 
 ## Troubleshooting
-
-
 
 ## LICENSE
 
