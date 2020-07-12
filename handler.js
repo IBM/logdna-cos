@@ -16,15 +16,15 @@
  *
  */
 // https://www.npmjs.com/package/dotenv
-require('dotenv').config();
+require("dotenv").config();
 // https://www.npmjs.com/package/ibm-cos-sdk
-const { S3 } = require('ibm-cos-sdk');
+const { S3 } = require("ibm-cos-sdk");
 // https://www.npmjs.com/package/request
-const request = require('request-promise').defaults({ forever: true });
+const request = require("request-promise").defaults({ forever: true });
 // https://nodejs.org/api/zlib.html
-const { unzip } = require('zlib');
+const { unzip } = require("zlib");
 // https://nodejs.org/api/util.html
-const util = require('util');
+const util = require("util");
 /**
  *
  * IBM CLOUD OBJECT STORAGE
@@ -32,10 +32,10 @@ const util = require('util');
  *
  */
 const cos = new S3({
-  endpoint: process.env.COS_ENDPOINT || '{endpoint}',
-  apiKeyId: process.env.COS_APIKEY || '{apiKeyId}',
-  ibmAuthEndpoint: 'https://iam.cloud.ibm.com/identity/token',
-  serviceInstanceId: process.env.COS_INSTANCEID || '{serviceInstanceId}',
+  endpoint: process.env.COS_ENDPOINT || "{endpoint}",
+  apiKeyId: process.env.COS_APIKEY || "{apiKeyId}",
+  ibmAuthEndpoint: "https://iam.cloud.ibm.com/identity/token",
+  serviceInstanceId: process.env.COS_INSTANCEID || "{serviceInstanceId}",
 });
 /**
  *
@@ -43,8 +43,8 @@ const cos = new S3({
  * Using "From-To" logic with all logs
  *
  */
-const BUCKET_RECEIVER = process.env.COS_BUCKET_RECEIVER || '{bucketReceiver}';
-const BUCKET_ARCHIVE = process.env.COS_BUCKET_ARCHIVE || '{bucketArchive}';
+const BUCKET_RECEIVER = process.env.COS_BUCKET_RECEIVER || "{bucketReceiver}";
+const BUCKET_ARCHIVE = process.env.COS_BUCKET_ARCHIVE || "{bucketArchive}";
 /**
  *
  * IBM CLOUD OBJECT STORAGE
@@ -59,8 +59,8 @@ const MAX_KEYS = 1;
  * API Key and Hostname to send the logs
  *
  */
-const INGESTION_KEY = process.env.LOGDNA_INGESTION_KEY || '{ingestionKey}';
-const HOSTNAME = process.env.LOGDNA_HOSTNAME || '{host}';
+const INGESTION_KEY = process.env.LOGDNA_INGESTION_KEY || "{ingestionKey}";
+const HOSTNAME = process.env.LOGDNA_HOSTNAME || "{host}";
 /**
  *
  * PACKAGE PER REQUEST
@@ -72,11 +72,19 @@ const LOGS = 20000;
 
 async function uploadAndDeleteBucket(fileName) {
   try {
-    console.log('DEBUG: Uploading the log file');
-    await cos.copyObject({ Bucket: BUCKET_ARCHIVE, CopySource: `${BUCKET_RECEIVER}/${fileName}`, Key: fileName }).promise();
-    console.log('DEBUG: Deleting the log file');
-    await cos.deleteObject({ Bucket: BUCKET_RECEIVER, Key: fileName }).promise();
-    return { status: 200, message: 'Update and delete log file DONE' };
+    console.log("DEBUG: Uploading the log file");
+    await cos
+      .copyObject({
+        Bucket: BUCKET_ARCHIVE,
+        CopySource: `${BUCKET_RECEIVER}/${fileName}`,
+        Key: fileName,
+      })
+      .promise();
+    console.log("DEBUG: Deleting the log file");
+    await cos
+      .deleteObject({ Bucket: BUCKET_RECEIVER, Key: fileName })
+      .promise();
+    return { status: 200, message: "Update and delete log file DONE" };
   } catch (e) {
     console.error(e);
     return e;
@@ -85,22 +93,24 @@ async function uploadAndDeleteBucket(fileName) {
 
 function sendLogDNA(json) {
   return request({
-    method: 'POST',
+    method: "POST",
     url: `https://logs.us-south.logging.cloud.ibm.com/logs/ingest?hostname=${HOSTNAME}`,
     body: json,
     auth: {
       user: INGESTION_KEY,
     },
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     json: true,
     timeout: 18000,
     agent: false,
     pool: { maxSockets: 200 },
-  }).then((response) => response).catch(async (e) => {
-    console.error(e);
-    console.log('Retrying to send package');
-    return sendLogDNA(json);
-  });
+  })
+    .then((response) => response)
+    .catch(async (e) => {
+      console.error(e);
+      console.log("Retrying to send package");
+      return sendLogDNA(json);
+    });
 }
 
 function split(buffer, tag) {
@@ -109,7 +119,10 @@ function split(buffer, tag) {
 
   while (newBuffer.indexOf(tag) > -1) {
     lines.push(newBuffer.slice(0, newBuffer.indexOf(tag)));
-    newBuffer = newBuffer.slice(newBuffer.indexOf(tag) + tag.length, newBuffer.length);
+    newBuffer = newBuffer.slice(
+      newBuffer.indexOf(tag) + tag.length,
+      newBuffer.length
+    );
   }
   lines.push(newBuffer);
   return lines;
@@ -117,13 +130,17 @@ function split(buffer, tag) {
 
 async function downloadAndSend() {
   try {
-    const lo = await cos.listObjectsV2({ Bucket: BUCKET_RECEIVER, MaxKeys: MAX_KEYS }).promise();
+    const lo = await cos
+      .listObjectsV2({ Bucket: BUCKET_RECEIVER, MaxKeys: MAX_KEYS })
+      .promise();
     if (lo.Contents.length === 0) {
       // Empty Bucket, return a HTTP status code 204 'No Content'
-      return { status: 204, message: 'No new log file on COS Bucket' };
+      return { status: 204, message: "No new log file on COS Bucket" };
     }
     console.log(`DEBUG: log file = ${lo.Contents[0].Key}`);
-    const o = await cos.getObject({ Bucket: BUCKET_RECEIVER, Key: lo.Contents[0].Key }).promise();
+    const o = await cos
+      .getObject({ Bucket: BUCKET_RECEIVER, Key: lo.Contents[0].Key })
+      .promise();
     const buffer = Buffer.from(o.Body);
     console.log(`DEBUG: Buffer length = ${buffer.length}`);
     if (buffer.length <= 28) {
@@ -132,35 +149,35 @@ async function downloadAndSend() {
     }
     const unzipPromise = util.promisify(unzip);
     const newBuffer = await unzipPromise(buffer);
-    const tag = new Buffer.from('}');
+    const tag = new Buffer.from("}");
     const sa = split(newBuffer, tag);
     sa.pop();
     const fj = { lines: [] };
     /* eslint-disable no-await-in-loop */
     for (let i = 0; i < sa.length; i += 1) {
-      sa[i] += '}';
+      sa[i] += "}";
       const json = JSON.parse(sa[i]);
       fj.lines.push({
         timestamp: new Date().getTime(),
-        line: '[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE',
-        app: 'logdna-cos',
-        level: 'INFO',
+        line: "[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE",
+        app: "logdna-cos",
+        level: "INFO",
         meta: {
           customfield: json,
         },
       });
-      if (i % LOGS === 0 || i === (sa.length - 1)) {
-        console.log(`DEBUG: Sending package = ${(i / LOGS + 1)}`);
+      if (i % LOGS === 0 || i === sa.length - 1) {
+        console.log(`DEBUG: Sending package = ${i / LOGS + 1}`);
         const response = await sendLogDNA(fj);
         console.log(`DEBUG: sendLogDNA response = ${JSON.stringify(response)}`);
         // Example response body = {"status":"ok","batchID":""}
-        if (response && response.status === 'ok') {
+        if (response && response.status === "ok") {
           fj.lines = [];
         }
       }
     }
     /* eslint-enable no-await-in-loop */
-    console.log('DEBUG: uploadAndDeleteBucket');
+    console.log("DEBUG: uploadAndDeleteBucket");
     return await uploadAndDeleteBucket(lo.Contents[0].Key);
   } catch (e) {
     console.error(e);
@@ -169,10 +186,10 @@ async function downloadAndSend() {
 }
 
 async function main() {
-  console.time('LogDNA-COS');
+  console.time("LogDNA-COS");
   const response = await downloadAndSend();
   console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`);
-  console.timeEnd('LogDNA-COS');
+  console.timeEnd("LogDNA-COS");
   // DEBUG::
   // switch (response.status) {
   //   case 200:

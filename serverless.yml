@@ -1,6 +1,6 @@
 #
 # Copyright 2020 Victor Shinya
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -16,15 +16,14 @@
 
 # Basic action code in Node.js
 packages:
-    logdna-cos:
-        version: 1.0
-        license: Apache-2.0
-        actions:
-            index:
-                function: handler.js
-                web-export: false
-
-# See references: 
+  logdna-cos:
+    version: 1.0
+    license: Apache-2.0
+    actions:
+      index:
+        function: handler.js
+        web-export: false
+# See references:
 # https://serverless.com/framework/docs/providers/openwhisk/guide/serverless.yml
 # https://cloud.ibm.com/docs/openwhisk?topic=cloud-functions-deploy
 # https://github.com/apache/openwhisk-wskdeploy/blob/master/docs/programming_guide.md#guided-examples
