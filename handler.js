@@ -25,6 +25,7 @@ const request = require("request-promise").defaults({ forever: true });
 const { unzip } = require("zlib");
 // https://nodejs.org/api/util.html
 const util = require("util");
+const unzipPromise = util.promisify(unzip);
 /**
  *
  * IBM CLOUD OBJECT STORAGE
@@ -147,7 +148,6 @@ async function downloadAndSend() {
       // Empty log file (normally with 28KB on CIS)
       return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer);
     }
-    const unzipPromise = util.promisify(unzip);
     const newBuffer = await unzipPromise(buffer);
     const tag = new Buffer.from("}");
     const sa = split(newBuffer, tag);
