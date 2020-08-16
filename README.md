@@ -27,13 +27,13 @@ Or if you're going to run on a VM, you can simply add all credencials on a .env 
 
 Replace on `handler.js`:
 
-- [ Line 33 ] `{endpoint}` by your IBM Cloud Object Storage's endpoint.
-- [ Line 34 ] `{apiKeyId}` by your IBM Cloud Object Storage's apiKeyId.
-- [ Line 36 ] `{serviceInstanceId}` by your IBM Cloud Object Storage's serviceInstanceId.
-- [ Line 44 ] `{bucketReceiver}` by your IBM Cloud Object Storage's bucket that will receive all log files from IBM Cloud Internet Service.
-- [ Line 45 ] `{bucketArchive}` by your IBM Cloud Object Storage's bucket after sending all logs to LogDNA.
-- [ Line 60 ] `{ingestionKey}` by your LogDNA's API Key.
-- [ Line 61 ] `{host}` by your LogDNA's hostname (defined by you).
+- [ Line 36 ] `{endpoint}` by your IBM Cloud Object Storage's endpoint.
+- [ Line 37 ] `{apiKeyId}` by your IBM Cloud Object Storage's apiKeyId.
+- [ Line 39 ] `{serviceInstanceId}` by your IBM Cloud Object Storage's serviceInstanceId.
+- [ Line 47 ] `{bucketReceiver}` by your IBM Cloud Object Storage's bucket that will receive all log files from IBM Cloud Internet Service.
+- [ Line 48 ] `{bucketArchive}` by your IBM Cloud Object Storage's bucket after sending all logs to LogDNA.
+- [ Line 63 ] `{ingestionKey}` by your LogDNA's API Key.
+- [ Line 64 ] `{host}` by your LogDNA's hostname (defined by you).
 
 ### 3. Deploy all functions
 
