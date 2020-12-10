@@ -7,7 +7,7 @@
 
 IBM Cloud™ Internet Services on Enterprise Plan offers a Logpush feature which sends at least 1 log package (on a `.gz` file) to a Bucket on a [Cloud Object Storage](https://cloud.ibm.com/catalog/services/cloud-object-storage) every 5 minutes. For those logs, there is a service called [IBM Log Analysis with LogDNA](https://cloud.ibm.com/catalog/services/ibm-log-analysis-with-logdna) that can receive all logs and display them in a single platform (you can send logs from your Kubernetes cluster, VMs, etc). To import all logs into LogDNA, you need to set up a Serverless function to check COS and send the logs to LogDNA every 3 minutes. It uses an Action and a Trigger (with a Cron job) to run the job automatically.
 
-![Architecture Design](doc/source/images/architecture.jpg)
+![Architecture Design](doc/source/images/architecture.png)
 
 Before you follow step-by-step below, you need to install [IBM Cloud CLI](https://cloud.ibm.com/docs/cli/reference/ibmcloud/download_cli.html#install_use) and [IBM Cloud Functions CLI](https://cloud.ibm.com/openwhisk/learn/cli) in your local machine. Then, you need to login in your IBM Cloud account on IBM Cloud CLI (if you haven't already done, run `ibmcloud login`).
 
