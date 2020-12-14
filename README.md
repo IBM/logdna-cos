@@ -200,6 +200,9 @@ Tip: Use [pm2](https://www.npmjs.com/package/pm2) to run the script on backgroun
 
 ## Troubleshooting
 
+- LogDNA ingestion API has a limitation of 10 MB per request.
+- ***ESOCKETTIMEDOUT***, ***ECONNRESET*** and ***ETIMEDOUT*** are LogDNA Ingest API errors. The script will automatically resend the logs.
+
 ## LICENSE
 
 Copyright 2020 Victor Shinya
