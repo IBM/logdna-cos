@@ -66,10 +66,14 @@ const HOSTNAME = process.env.LOGDNA_HOSTNAME || "{host}";
  *
  * PACKAGE PER REQUEST
  * To avoid `PayloadTooLarge` error
- * Use a value between '0' and '20000'
+ * - LogDNA Ingest API has a limit of 10 MB/request
+ * 
+ * A single log with all fields has 2 KB, in a
+ * regular HTTP request. By default the number
+ * of logs is set in 5000 logs per Ingest request
  *
  */
-const LOGS = 20000;
+const LOGS = 5000;
 
 async function uploadAndDeleteBucket(fileName) {
   try {
