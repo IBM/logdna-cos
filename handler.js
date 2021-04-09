@@ -1,6 +1,6 @@
 /**
  *
- * Copyright 2020 Victor Shinya
+ * Copyright 2021 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,49 +25,34 @@ const request = require("request-promise").defaults({ forever: true });
 const { unzip } = require("zlib");
 // https://nodejs.org/api/util.html
 const util = require("util");
+
 const unzipPromise = util.promisify(unzip);
 /**
  *
  * IBM CLOUD OBJECT STORAGE
- * Endpoint access -> Endpoint, API Key and Instance ID
+ * Instance access through COS SDK
+ * - Endpoint;
+ * - API Key;
+ * - Service Instance ID;
+ * - Bucket for archive purpose.
  *
  */
-const cos = new S3({
-  endpoint: process.env.COS_ENDPOINT || "{endpoint}",
-  apiKeyId: process.env.COS_APIKEY || "{apiKeyId}",
-  ibmAuthEndpoint: "https://iam.cloud.ibm.com/identity/token",
-  serviceInstanceId: process.env.COS_INSTANCEID || "{serviceInstanceId}",
-});
-/**
- *
- * IBM CLOUD OBJECT STORAGE
- * Using "From-To" logic with all logs
- *
- */
-const BUCKET_RECEIVER = process.env.COS_BUCKET_RECEIVER || "{bucketReceiver}";
-const BUCKET_ARCHIVE = process.env.COS_BUCKET_ARCHIVE || "{bucketArchive}";
-/**
- *
- * IBM CLOUD OBJECT STORAGE
- * Set the max number of items to return
- * on `S3.listObjectsV2()` function
- *
- */
-const MAX_KEYS = 1;
+let cos;
+let BUCKET_ARCHIVE;
 /**
  *
  * IBM LOG ANALYSIS WITH LOGDNA
  * API Key and Hostname to send the logs
  *
  */
-const INGESTION_KEY = process.env.LOGDNA_INGESTION_KEY || "{ingestionKey}";
-const HOSTNAME = process.env.LOGDNA_HOSTNAME || "{host}";
+let INGESTION_KEY;
+let HOSTNAME;
 /**
  *
  * PACKAGE PER REQUEST
  * To avoid `PayloadTooLarge` error
  * - LogDNA Ingest API has a limit of 10 MB/request
- * 
+ *
  * A single log with all fields has 2 KB, in a
  * regular HTTP request. By default the number
  * of logs is set in 5000 logs per Ingest request
@@ -75,19 +60,19 @@ const HOSTNAME = process.env.LOGDNA_HOSTNAME || "{host}";
  */
 const LOGS = 5000;
 
-async function uploadAndDeleteBucket(fileName) {
+async function uploadAndDeleteBucket(bucketReceiver, fileName) {
   try {
     console.log("DEBUG: Uploading the log file");
     await cos
       .copyObject({
         Bucket: BUCKET_ARCHIVE,
-        CopySource: `${BUCKET_RECEIVER}/${fileName}`,
+        CopySource: `${bucketReceiver}/${fileName}`,
         Key: fileName,
       })
       .promise();
     console.log("DEBUG: Deleting the log file");
     await cos
-      .deleteObject({ Bucket: BUCKET_RECEIVER, Key: fileName })
+      .deleteObject({ Bucket: bucketReceiver, Key: fileName })
       .promise();
     return { status: 200, message: "Update and delete log file DONE" };
   } catch (e) {
@@ -133,36 +118,29 @@ function split(buffer, tag) {
   return lines;
 }
 
-async function downloadAndSend() {
+async function downloadAndSend(params) {
   try {
-    const lo = await cos
-      .listObjectsV2({ Bucket: BUCKET_RECEIVER, MaxKeys: MAX_KEYS })
-      .promise();
-    if (lo.Contents.length === 0) {
-      // Empty Bucket, return a HTTP status code 204 'No Content'
-      return { status: 204, message: "No new log file on COS Bucket" };
-    }
-    console.log(`DEBUG: log file = ${lo.Contents[0].Key}`);
     const o = await cos
-      .getObject({ Bucket: BUCKET_RECEIVER, Key: lo.Contents[0].Key })
+      .getObject({ Bucket: params.notification.bucket_name, Key: params.notification.object_name })
       .promise();
+    console.log(`DEBUG: log file = ${params.notification.object_name}`);
     const buffer = Buffer.from(o.Body);
     console.log(`DEBUG: Buffer length = ${buffer.length}`);
     if (buffer.length <= 28) {
       // Empty log file (normally with 28KB on CIS)
-      return await uploadAndDeleteBucket(lo.Contents[0].Key, buffer);
+      return await uploadAndDeleteBucket(params.notification.bucket_name, params.notification.object_name);
     }
     const newBuffer = await unzipPromise(buffer);
-    const tag = new Buffer.from("}");
+    const tag = new Buffer.from('{"');
     const sa = split(newBuffer, tag);
-    sa.pop();
+    sa.shift();
     const fj = { lines: [] };
     /* eslint-disable no-await-in-loop */
     for (let i = 0; i < sa.length; i += 1) {
-      sa[i] += "}";
+      sa[i] = `{"${sa[i]}`;
       const json = JSON.parse(sa[i]);
       fj.lines.push({
-        timestamp: new Date().getTime(),
+        timestamp: new Date(json.EdgeStartTimestamp).getTime(),
         line: "[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE",
         app: "logdna-cos",
         level: "INFO",
@@ -182,36 +160,33 @@ async function downloadAndSend() {
     }
     /* eslint-enable no-await-in-loop */
     console.log("DEBUG: uploadAndDeleteBucket");
-    return await uploadAndDeleteBucket(lo.Contents[0].Key);
+    return await uploadAndDeleteBucket(params.notification.bucket_name, params.notification.object_name);
   } catch (e) {
     console.error(e);
     return { status: 500, message: JSON.stringify(e) };
   }
 }
 
-async function main() {
+async function main(params) {
   console.time("LogDNA-COS");
-  const response = await downloadAndSend();
+  if (!cos) {
+    cos = new S3({
+      endpoint: params.endpoint,
+      apiKeyId: params.apiKeyId,
+      ibmAuthEndpoint: "https://iam.cloud.ibm.com/identity/token",
+      serviceInstanceId: params.serviceInstanceId,
+    });
+  }
+  if (!INGESTION_KEY || !HOSTNAME) {
+    INGESTION_KEY = params.ingestionKey;
+    HOSTNAME = params.hostname;
+  }
+  if (!BUCKET_ARCHIVE) {
+    BUCKET_ARCHIVE = params.bucketArchive;
+  }
+  const response = await downloadAndSend(params);
   console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`);
   console.timeEnd("LogDNA-COS");
-  // DEBUG::
-  // switch (response.status) {
-  //   case 200:
-  //     console.log('DEBUG: Fetch new log file');
-  //     await main();
-  //     break;
-  //   case 204:
-  //     console.log('DEBUG: Wait 3 minutes to fetch new log file on COS Bucket');
-  //     await new Promise((r) => setTimeout(r, 180000));
-  //     await main();
-  //     break;
-  //   default:
-  //     console.log('DEBUG: Uncommon behavior');
-  //     break;
-  // }
 }
-
-// DEBUG::
-// main();
 
 exports.main = main;
