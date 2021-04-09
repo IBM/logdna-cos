@@ -1,6 +1,6 @@
 {
   "name": "logdna-cos",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pull the lastest log file on Cloud Object Storage to store on LogDNA",
   "main": "handler.js",
   "scripts": {
@@ -12,18 +12,17 @@
   "author": "Victor Shinya <vshinya@br.ibm.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "buffer-split": "^1.0.0",
     "dotenv": "^8.2.0",
-    "ibm-cos-sdk": "^1.6.1",
+    "ibm-cos-sdk": "^1.10.0",
     "request": "^2.88.2",
-    "request-promise": "^4.2.5",
+    "request-promise": "^4.2.6",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "eslint": "^7.4.0",
-    "eslint-config-airbnb-base": "^14.2.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-import": "^2.22.0",
+    "eslint": "^7.23.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-import": "^2.22.1",
     "prettier": "2.0.5"
   }
 }
