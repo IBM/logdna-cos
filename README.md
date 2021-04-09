@@ -164,7 +164,7 @@ After you set up all the steps above, you will be able to see the logs being imp
 
 ## LICENSE
 
-Copyright 2020 Victor Shinya
+Copyright 2021 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
