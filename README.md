@@ -5,7 +5,7 @@
 [![LICENSE](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/victorshinya/logdna-cos/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/victorshinya/logdna-cos/pulls)
 
-IBM Cloud™ Internet Services on Enterprise Plan offers a Logpush feature which sends at least 1 log package (on a `.gz` file) to a Bucket on a [Cloud Object Storage](https://cloud.ibm.com/catalog/services/cloud-object-storage) every 5 minutes. For those logs, there is a service called [IBM Log Analysis with LogDNA](https://cloud.ibm.com/catalog/services/ibm-log-analysis-with-logdna) that can receive all logs and display them in a single platform (you can send logs from your Kubernetes cluster, VMs, etc). To import all logs into LogDNA, you need to set up a Serverless function to check COS and send the logs to LogDNA every 3 minutes. It uses an Action and a Trigger (with a Cron job) to run the job automatically.
+IBM Cloud™ Internet Services on Enterprise Plan offers a Logpush feature which sends at least 1 log package (on a `.gz` file) to a Bucket on a [IBM Cloud Object Storage](https://cloud.ibm.com/catalog/services/cloud-object-storage) every 100,000 logs or every 30 seconds, whichever comes first. More than one file might be pushed per 30-second period or per 100,000 logs. For those logs, there is a service called [IBM Log Analysis with LogDNA](https://cloud.ibm.com/catalog/services/ibm-log-analysis-with-logdna) that can receive all logs and display them in a single platform (you can send logs from your Kubernetes cluster, VMs, etc). To import all logs into LogDNA, you need to set up a Serverless function on IBM Cloud Functions which uses a Trigger to call your function automatically. The Trigger listens for a write event on IBM Cloud Object Storage. Whenever CIS uploads an object to your IBM Cloud Object Storage bucket, the Trigger calls your function that process the log package and automatcally send it to your LogDNA instance.
 
 ![Architecture Design](doc/source/images/architecture.png)
 
@@ -20,9 +20,9 @@ git clone https://github.com/IBM/logdna-cos.git
 cd logdna-cos
 ```
 
-## 2. Create a Cloud Object Storage service instance
+## 2. Create an IBM Cloud Object Storage service instance
 
-Access the IBM Cloud Catalog and create a [Cloud Object Storage](https://cloud.ibm.com/catalog/services/cloud-object-storage). After you create the instance, you have to create two Buckets in the same Resiliency and Location (e.g `Regional` and `us-south`):
+Access the IBM Cloud Catalog and create a [IBM Cloud Object Storage](https://cloud.ibm.com/catalog/services/cloud-object-storage). After you create the instance, you have to create two Buckets with the same Resiliency and Location (e.g `Regional` and `us-south`):
 
 - To receive the log files from CIS;
 - To store the log files after you send the content to LogDNA.
@@ -31,7 +31,7 @@ Remember the name for each one of the Bucket name, because you're going to use t
 
 For your service instance, you need to create a Service credential. You can find it on the left menu in your COS instance. For the purpose of this project, you will use `apikey` and `iam_serviceid_crn`.
 
-> You can find the Endpoint URL on `Endpoints`. The correct enpoint for your usecase depends on the Resilience and Location you choose when you create your Buckets. For more information, access the [IBM Cloud Docs](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-endpoints).
+> You can find the Endpoint URL on `Endpoints` tab. The correct enpoint for your usecase depends on the Resilience and Location you choose when you create your Buckets. For more information, access the [IBM Cloud Docs](https://cloud.ibm.com/docs/cloud-object-storage?topic=cloud-object-storage-endpoints).
 
 ## 3. Create a IBM Log Analysis with LogDNA service instance
 
@@ -39,31 +39,40 @@ Access the IBM Cloud Catalog and create a [IBM Log Analysis with LogDNA](https:/
 
 Access the `Settings` -> `ORGANIZATION` -> `API Keys` to get your Ingestion Keys.
 
-## 4. Open the project in a text editor
+## 4. Set up the environment variables to deploy them as function's parameters
 
-Open the project in any text editor your normally use (like VSCode or Atom). Open the `handler.js` file and replace the boilerplate with your LogDNA and Cloud Object Storage credentials, described below.
+Run the following command with the IBM Cloud Object Storage credentials and the bucket name (for long-term retention), and IBM Log Analysis with LogDNA ingestion key:
 
-Replace on `handler.js`:
+- LOGDNA_HOSTNAME is the name of the source of the log line.
+- LOGDNA_INGESTION_KEY is used to connect the Node.js function to the LogDNA instance.
+- COS_BUCKET_ARCHIVE is the bucket where you will save the log package after you send it to LogDNA (consider it as your long-term retention).
+- COS_APIKEY is the apikey field, generated on service credentials in your COS instance.
+- COS_ENDPOINT is the endpoint available on Endpoint section in your COS instance. It depends on the resiliency and location that your bucket is defined.
+- COS_INSTANCEID is the resource_instance_id field, generated on service credentials in your COS instance.
 
-- [ Line 36 ] `{endpoint}` by your IBM Cloud Object Storage's endpoint.
-- [ Line 37 ] `{apiKeyId}` by your IBM Cloud Object Storage's apiKeyId.
-- [ Line 39 ] `{serviceInstanceId}` by your IBM Cloud Object Storage's serviceInstanceId.
-- [ Line 47 ] `{bucketReceiver}` by your IBM Cloud Object Storage's bucket that will receive all log files from IBM Cloud Internet Service.
-- [ Line 48 ] `{bucketArchive}` by your IBM Cloud Object Storage's bucket after sending all logs to LogDNA.
-- [ Line 63 ] `{ingestionKey}` by your LogDNA's API Key.
-- [ Line 64 ] `{host}` by your LogDNA's hostname (defined by you).
+```sh
+export LOGDNA_HOSTNAME="" LOGDNA_INGESTION_KEY="" COS_BUCKET_ARCHIVE="" COS_APIKEY="" COS_ENDPOINT="" COS_INSTANCEID=""
+```
 
-## 5. Deploy the Action and Trigger
+## 5. Deploy the Action
 
 Run the following command to deploy `handler.js` function and to set up the Trigger with Cron job.
 
 > As you are using IBM Cloud Functions, you don't need to install any package or setup a `package.json`. The platform already has all libraries required to run the source code.
 
 ```sh
-ibmcloud fn deploy --manifest serverless.yml
+ibmcloud fn deploy --manifest manifest.yml
 ```
 
-## 6. Enable and set up Logpush service
+### 6. Set up the Cloud Object Storage Trigger on IBM Cloud Functions
+
+Before you can create a trigger to listen for bucket change events, you must assign the Notifications Manager role to your IBM Cloud Functions namespace. Folow the instruction on [IBM Cloud Docs](https://cloud.ibm.com/docs/openwhisk?topic=openwhisk-pkg_obstorage#pkg_obstorage_auth) to assign the role in your service policy.
+
+When you complete the previous step, you will be able to create a new COS Trigger. Access the [Functions > Create > Trigger > Cloud Object Storage](https://cloud.ibm.com/functions/create/trigger/cloud-object-storage) to create and connect your bucket with your Action.
+
+Now, your Action will be called everytime you upload a new object to your bucket.
+
+## 7. Enable and set up Logpush service
 
 To set up the Logpush on Cloud Internet Services (CIS) and authorize CIS to send the log package to Object Storage, follow the step-by-step from [IBM Cloud Docs](https://cloud.ibm.com/docs/cis?topic=cis-logpush#logpush-setup-ui).
 
@@ -136,63 +145,13 @@ To set up the Logpush on Cloud Internet Services (CIS) and authorize CIS to send
 }
 ```
 
-After you set up the Logpush feature, it will start sending the log package to your Cloud Object Storage instance every 5 minutes, whether there was an access or not. For a large amount of access, you will see more than 1 log package (the `.gz` file) on COS. That is because Cloudflare splits the file to avoid a large file size (more than 3 GB per log package).
+After you set up the Logpush feature, it will start sending the log package to your IBM Cloud Object Storage instance every 5 minutes, whether there was an access or not. For a large amount of access, you will see more than 1 log package (the `.gz` file) on COS. That is because Cloudflare splits the file to avoid a large file size (more than 3 GB per log package).
 
 ### Result on LogDNA
 
 After you set up all the steps above, you will be able to see the logs being imported on LogDNA, as you can see on the image below.
 
 ![Example](doc/source/images/example.png)
-
-## Run the project in a Virtual Machine
-
-For a large amount of access to your domain, the IBM Cloud Functions will not be able to process a large file, even with the maximum capability. So in this case, you can run the source code in a Virtual Server on IBM Cloud.
-
-To set up the project to run in a VM, you have to create a `.env` file and add the respective service credential (described on [.env.example](.env.example) file).
-
-```.env
-# IBM Log Analysis with LogDNA
-LOGDNA_INGESTION_KEY=
-LOGDNA_HOSTNAME=
-
-# IBM Cloud Object Storage
-COS_ENDPOINT=
-COS_APIKEY=
-COS_INSTANCEID=
-COS_BUCKET_RECEIVER=
-COS_BUCKET_ARCHIVE=
-```
-
-Then, you have to uncomment all the source code below `DEBUG::` on [handler.js](handler.js) (do not uncomment the `DEBUG::` line):
-
-```js
-async function main() {
-  console.time("LogDNA-COS");
-  const response = await downloadAndSend();
-  console.log(`DEBUG: downloadAndSend = ${JSON.stringify(response.message)}`);
-  console.timeEnd("LogDNA-COS");
-  // DEBUG::
-  switch (response.status) {
-    case 200:
-      console.log("DEBUG: Fetch new log file");
-      await main();
-      break;
-    case 204:
-      console.log("DEBUG: Wait 3 minutes to fetch new log file on COS Bucket");
-      await new Promise((r) => setTimeout(r, 180000));
-      await main();
-      break;
-    default:
-      console.log("DEBUG: Uncommon behavior");
-      break;
-  }
-}
-
-// DEBUG::
-main();
-```
-
-Tip: Use [pm2](https://www.npmjs.com/package/pm2) to run the script on background in your Virtual Machine.
 
 ## API Reference
 

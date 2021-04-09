@@ -1,5 +1,5 @@
 #
-# Copyright 2020 Victor Shinya
+# Copyright 2021 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,21 +17,19 @@
 # Basic action code in Node.js
 packages:
   logdna-cos:
-    version: 1.0
+    version: 1.1.0
     license: Apache-2.0
     actions:
       index:
         function: handler.js
         web-export: false
-    triggers:
-      trigger:
-        feed: /whisk.system/alarms/alarm
         inputs:
-          cron: '*/3 * * * *'
-    rules:
-      3-minutes-cron:
-        action: index
-        trigger: trigger
+          hostname: $LOGDNA_HOSTNAME
+          ingestionKey: $LOGDNA_INGESTION_KEY
+          bucketArchive: $COS_BUCKET_ARCHIVE
+          apiKeyId: $COS_APIKEY
+          endpoint: $COS_ENDPOINT
+          serviceInstanceId: $COS_INSTANCEID
 # See references:
 # https://serverless.com/framework/docs/providers/openwhisk/guide/serverless.yml
 # https://cloud.ibm.com/docs/openwhisk?topic=cloud-functions-deploy
