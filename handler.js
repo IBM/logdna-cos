@@ -131,16 +131,19 @@ async function downloadAndSend(params) {
       return await uploadAndDeleteBucket(params.notification.bucket_name, params.notification.object_name);
     }
     const newBuffer = await unzipPromise(buffer);
-    const tag = new Buffer.from('{"');
+    const tag = new Buffer.from('\n');
     const sa = split(newBuffer, tag);
-    sa.shift();
+    sa.pop();
     const fj = { lines: [] };
     /* eslint-disable no-await-in-loop */
     for (let i = 0; i < sa.length; i += 1) {
-      sa[i] = `{"${sa[i]}`;
       const json = JSON.parse(sa[i]);
+      // Check whenever a field exists in the log line
+      // - json.EdgeStartTimestamp is used when the code handles CIS Logpush for HTTP/HTTPS logs
+      // - json.Datetime is used when the code handles CIS Logpush for Firewall logs
+      const dateTime = json.EdgeStartTimestamp ? json.EdgeStartTimestamp : json.Datetime;
       fj.lines.push({
-        timestamp: new Date(json.EdgeStartTimestamp).getTime(),
+        timestamp: new Date(dateTime).getTime(),
         line: "[AUTOMATIC] LOG FROM IBM CLOUD INTERNET SERVICE",
         app: "logdna-cos",
         level: "INFO",
