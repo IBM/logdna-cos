@@ -1,6 +1,6 @@
 {
   "name": "logdna-cos",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Pull the lastest log file on Cloud Object Storage to store on LogDNA",
   "main": "handler.js",
   "scripts": {
@@ -24,5 +24,8 @@
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.1",
     "prettier": "2.0.5"
+  },
+  "engines": {
+    "node": "16.2.x"
   }
 }
