@@ -151,7 +151,7 @@ async function downloadAndSend(params) {
           customfield: json,
         },
       });
-      if (i % LOGS === 0 || i === sa.length - 1) {
+      if ((i > 0 && i % (LOGS - 1) === 0) || i === sa.length - 1) {
         console.log(`DEBUG: Sending package = ${i / LOGS + 1}`);
         const response = await sendLogDNA(fj);
         console.log(`DEBUG: sendLogDNA response = ${JSON.stringify(response)}`);
